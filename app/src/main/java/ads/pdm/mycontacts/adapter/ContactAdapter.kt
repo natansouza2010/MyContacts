@@ -34,8 +34,11 @@ class ContactAdapter(context: Context,
             contactTitleView.tag = titleContactHolder
         }
 
-        tcb.nameTv.text = contact.name
-        tcb.emailTv.text = contact.email
+        with(contactTitleView.tag as TitleContactHolder){
+            tcb.nameTv.text = contact.name
+            tcb.emailTv.text = contact.email
+        }
+
         return contactTitleView
     }
 
