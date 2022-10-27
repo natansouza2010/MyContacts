@@ -9,8 +9,12 @@ import ads.pdm.mycontacts.model.Contact
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.view.ContextMenu
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,7 +35,8 @@ class MainActivity : AppCompatActivity() {
 //            contactList.map{it.toString()}
 //        )
 //    }
-    private val contactAdapter =  ContactAdapter(this, contactList)
+     private lateinit var contactAdapter: ContactAdapter
+//    private val contactAdapter =  ContactAdapter(this, contactList)
 
 
 
@@ -39,6 +44,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(amb.root)
         fillContactList()
+        contactAdapter = ContactAdapter(this, contactList)
         amb.contactListView.adapter = contactAdapter
 
         carl = registerForActivityResult(
@@ -50,12 +56,34 @@ class MainActivity : AppCompatActivity() {
                     val contact = result.data?.getParcelableExtra<Contact>(EXTRA_CONTACT)
                     contact?.let{
                         _contact ->
-                        contactList.add(_contact)
+                        val position = contactList.indexOfFirst { it.id ==_contact.id  }
+                        if(position != -1){
+                            //alterar a posicao
+
+                            contactList[position] = _contact
+                        }else {
+                            contactList.add(_contact)
+                        }
+
 //                        contactAdapter.add(_contact.toString())
                         contactAdapter.notifyDataSetChanged()
                     }
                 }
         }
+
+        registerForContextMenu(amb.contactListView)
+        amb.contactListView.onItemClickListener = object: AdapterView.OnItemClickListener{
+            override fun onItemClick(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
+                val contact = contactList[position]
+                val contactIntent = Intent(this@MainActivity, ContactActivity::class.java)
+                contactIntent.putExtra(EXTRA_CONTACT, contact)
+                contactIntent.putExtra(EXTRA_CONTACT, false)
+                startActivity(contactIntent)
+            }
+
+
+        }
+
 
     }
 
@@ -75,6 +103,38 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             else -> {false}
+        }
+    }
+
+    override fun onCreateContextMenu(
+        menu: ContextMenu?,
+        v: View?,
+        menuInfo: ContextMenu.ContextMenuInfo?
+    ) {
+        menuInflater.inflate(R.menu.context_menu_main,menu )
+    }
+
+    override fun onContextItemSelected(item: MenuItem): Boolean {
+        val position = (item.menuInfo as AdapterView.AdapterContextMenuInfo).position
+        return when(item.itemId) {
+            R.id.removeContactM1 -> {
+                //Remove o contato
+                contactList.removeAt(position)
+                Log.d("AOBA", contactList.toString());
+                contactAdapter.notifyDataSetChanged()
+                true
+
+            }
+            R.id.editContactM1 -> {
+                val contact = contactList[position]
+                val contactIntent = Intent(this, ContactActivity::class.java)
+                contactIntent.putExtra(EXTRA_CONTACT, contact)
+                carl.launch( contactIntent)
+                //Chama a tela para editar contato
+                true
+            }
+            else -> { false }
+
         }
     }
 
